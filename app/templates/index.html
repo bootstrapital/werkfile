@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">Companies</h1>
+<div class="row">
+    {% for company in companies %}
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ company.name }}</h5>
+                    <p class="card-text">Industry: {{ company.industry }}</p>
+                    <p class="card-text">Location: {{ company.location }}</p>
+                    <a href="/company/{{ company.id }}" class="btn btn-primary">View Roles</a>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+<a href="#" class="btn btn-success" hx-get="/company/new" hx-target="#modal-content" data-bs-toggle="modal" data-bs-target="#modal">Add Company</a>
+
+<!-- Modal for dynamic forms -->
+<div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" id="modal-content">
+            <!-- HTMX will load content here -->
+        </div>
+    </div>
+</div>
+{% endblock %}

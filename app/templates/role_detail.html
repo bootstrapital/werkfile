@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ role.title }}</h1>
+<p><strong>Company:</strong> {{ role.company.name }}</p>
+<p><strong>Start Date:</strong> {{ role.start_date }}</p>
+<p><strong>End Date:</strong> {{ role.end_date }}</p>
+<p>{{ role.description }}</p>
+
+<h2 class="mt-4">Projects</h2>
+<div class="list-group">
+    {% for project in role.projects %}
+        <div class="list-group-item">
+            <h5>{{ project.title }}</h5>
+            <p>{{ project.description }}</p>
+            <p><strong>Tools Used:</strong> {{ project.tools_used }}</p>
+        </div>
+    {% endfor %}
+</div>
+<a href="#" class="btn btn-success mt-3" hx-get="/project/new/{{ role.id }}" hx-target="#modal-content" data-bs-toggle="modal" data-bs-target="#modal">Add Project</a>
+
+<h2 class="mt-4">Achievements</h2>
+<div class="list-group">
+    {% for achievement in role.achievements %}
+        <div class="list-group-item">
+            <h5>{{ achievement.title }}</h5>
+            <p>{{ achievement.details }}</p>
+        </div>
+    {% endfor %}
+</div>
+<a href="#" class="btn btn-success mt-3" hx-get="/achievement/new/{{ role.id }}" hx-target="#modal-content" data-bs-toggle="modal" data-bs-target="#modal">Add Achievement</a>
+
+<!-- Modal -->
+<div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" id="modal-content">
+            <!-- HTMX will load content here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
