@@ -1,7 +1,7 @@
 # routes/technologies.py
 from fasthtml.common import *
-from wrkf.repositories import technology_repo
-from wrkf.templates.technology import render_technology_list, render_technology_form
+from repositories import technology_repo
+from templates.technology import render_technology_list, render_technology_form
 from .base import BaseRouter
 
 class TechnologyRouter(BaseRouter):

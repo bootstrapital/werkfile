@@ -1,6 +1,6 @@
 # database/connection.py
 from fastlite import Database
-from wrkf.config import DATABASE_PATH
+from config import DATABASE_PATH
 
 db = Database(DATABASE_PATH)
 
@@ -12,8 +12,10 @@ technologies = t.technologies
 experience_technologies = t.experience_technologies
 responsibilities = t.responsibilities
 business_impacts = t.business_impacts
+users = t.users
 
 # Create dataclasses for our tables
 WorkExperienceDB = work_experiences.dataclass()
 CompanyDB = companies.dataclass()
 TechnologyDB = technologies.dataclass()
+UserDB = users.dataclass()

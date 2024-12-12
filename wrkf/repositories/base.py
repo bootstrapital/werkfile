@@ -1,6 +1,6 @@
 # repositories/base.py
 from typing import TypeVar, Generic, Optional, List, Dict, Any
-from wrkf.database.connection import db
+from database.connection import db
 
 T = TypeVar('T')
 

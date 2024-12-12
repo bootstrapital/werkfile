@@ -1,7 +1,7 @@
 # repositories/responsibility_repository.py
 from typing import List
 from .base import BaseRepository
-from wrkf.database.connection import responsibilities, db
+from database.connection import responsibilities, db
 
 class ResponsibilityRepository(BaseRepository):
     def __init__(self):

@@ -1,7 +1,7 @@
 # repositories/technology_repository.py
 from typing import List, Optional
 from .base import BaseRepository
-from wrkf.database.connection import technologies, TechnologyDB
+from database.connection import technologies, TechnologyDB
 
 class TechnologyRepository(BaseRepository[TechnologyDB]):
     def __init__(self):

@@ -1,6 +1,6 @@
 # routes/base.py
 from fasthtml.common import *
-from wrkf.templates.base import BasePage
+from templates.base import BasePage
 from typing import Any, Optional
 
 class BaseRouter:

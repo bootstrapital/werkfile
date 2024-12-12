@@ -1,8 +1,8 @@
 # routes/work_experiences.py
 from fasthtml.common import *
 from typing import Optional
-from wrkf.repositories import work_experience_repo, company_repo, technology_repo
-from wrkf.templates.work_experience import (
+from repositories import work_experience_repo, company_repo, technology_repo
+from templates.work_experience import (
     render_experience_list,
     render_experience_form,
     render_experience_detail

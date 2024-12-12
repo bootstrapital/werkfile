@@ -1,7 +1,7 @@
 # repositories/work_experience_repository.py
 from typing import List, Dict, Any, Optional
 from .base import BaseRepository
-from wrkf.database.connection import (
+from database.connection import (
     db, work_experiences, WorkExperienceDB
 )
 from .responsibility_repository import ResponsibilityRepository

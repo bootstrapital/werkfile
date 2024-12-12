@@ -1,7 +1,7 @@
 # repositories/business_impact_repository.py
 from typing import List, Dict, Any
 from .base import BaseRepository
-from wrkf.database.connection import business_impacts, db
+from database.connection import business_impacts, db
 
 class BusinessImpactRepository(BaseRepository):
     def __init__(self):

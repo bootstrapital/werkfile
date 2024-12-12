@@ -1,7 +1,7 @@
 # repositories/company_repository.py
 from typing import List, Optional
 from .base import BaseRepository
-from wrkf.database.connection import companies, CompanyDB
+from database.connection import companies, CompanyDB
 
 class CompanyRepository(BaseRepository[CompanyDB]):
     def __init__(self):

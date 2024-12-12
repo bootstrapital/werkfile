@@ -1,7 +1,7 @@
 # routes/companies.py
 from fasthtml.common import *
-from wrkf.repositories import company_repo
-from wrkf.templates.company import render_company_list, render_company_form
+from repositories import company_repo
+from templates.company import render_company_list, render_company_form
 from .base import BaseRouter
 
 class CompanyRouter(BaseRouter):
