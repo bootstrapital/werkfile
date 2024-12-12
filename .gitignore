@@ -1,3 +1,7 @@
+# Miscellaneous
+.DS_Store
+.sesskey
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
