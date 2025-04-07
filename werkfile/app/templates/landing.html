@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to Werkfile{% endblock %}
+
+{% block content %}
+<div class="hero min-h-[calc(100vh-15rem)] bg-base-100 rounded-lg shadow-xl"> {# Adjust min-height as needed #}
+  <div class="hero-content text-center">
+    <div class="max-w-md">
+      {# You could add a logo here if you have one #}
+      {# <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Werkfile Logo" class="mx-auto mb-6 h-16"> #}
+
+      <h1 class="text-5xl font-bold text-primary">Werkfile</h1>
+      <p class="py-6 text-lg">
+        Your personal space to meticulously organize and manage your professional achievements and work experience details. Create detailed "brag sheets" effortlessly.
+      </p>
+
+      <div class="my-8 space-y-4">
+        <h2 class="text-2xl font-semibold">Key Features</h2>
+        <ul class="list-none space-y-2 text-left inline-block">
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            <span>Organize by Company/Project</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            <span>Rich YAML-based Entries</span>
+          </li>
+           <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            <span>Instant Live Preview</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            <span>Secure Authentication via Kinde</span>
+          </li>
+           <li class="flex items-center gap-2">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            <span>Fast, Modern UI (HTMX + Alpine)</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="space-x-4">
+         {# These URLs should ideally point to your Kinde login/registration endpoints #}
+         {# The Kinde SDK might automatically handle requests to /login and /register #}
+         {# Or you might need url_for('kinde.login'), url_for('kinde.register') depending on setup #}
+        <a href="/login" class="btn btn-primary">Login</a>
+        <a href="/register" class="btn btn-secondary">Sign Up</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

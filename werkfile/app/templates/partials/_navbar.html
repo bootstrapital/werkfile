@@ -1,0 +1,31 @@
+{# ${PROJECT_NAME}/${APP_PACKAGE_NAME}/templates/partials/_navbar.html - Example Navbar #}
+<div class="navbar bg-base-100 shadow-md">
+  <div class="flex-1">
+    <a href="{{ url_for('page.index') }}" class="btn btn-ghost normal-case text-xl">Werkfile</a>
+  </div>
+  <div class="flex-none">
+    <ul class="menu menu-horizontal px-1">
+      <li><a href="{{ url_for('page.experiences') }}">Experiences</a></li>
+      <li><a href="{{ url_for('page.resumes') }}">Resumes</a></li>
+      <li><a href="{{ url_for('page.search') }}">Search</a></li>
+      {# Authentication state handled by Kinde - show login/logout #}
+      {# {% if current_user %} #}
+          {# Example: Assumes current_user is available via context processor #}
+          {# <li tabindex="0"> #}
+            {# <a> #}
+              {# Profile #}
+              {# <svg class="fill-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"/></svg> #}
+            {# </a> #}
+            {# <ul class="p-2 bg-base-100"> #}
+              {# <li><a href="{{ url_for(page.profile) }}">My Profile</a></li> #}
+              {# <li><a href="/logout">Logout</a></li> {# Use Kinde logout URL #}
+            {# </ul> #}
+          {# </li> #}
+      {# {% else %} #}
+          {# <li><a href="/login">Login</a></li> {# Use Kinde login URL #}
+      {# {% endif %} #}
+       <li><a href="/profile">Profile (Placeholder)</a></li>
+       <li><a href="/logout">Logout (Placeholder)</a></li>
+    </ul>
+  </div>
+</div>

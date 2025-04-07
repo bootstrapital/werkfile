@@ -1,0 +1,6 @@
+# werkfile/requirements.txt - Python dependencies
+Flask
+python-dotenv
+python-kinde-sdk
+xata-py
+PyYAML

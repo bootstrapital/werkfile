@@ -1,0 +1,13 @@
+{
+  "name": "werkfile",
+  "version": "1.0.0",
+  "description": "Werkfile application frontend build setup",
+  "scripts": {
+    "build:css": "tailwindcss -i ./app/static/src/input.css -o ./app/static/css/output.css",
+    "watch:css": "tailwindcss -i ./app/static/src/input.css -o ./ap/static/css/output.css --watch"
+  },
+  "devDependencies": {
+    "daisyui": "^5.0.12",
+    "tailwindcss": "^4.0.0"
+  }
+}

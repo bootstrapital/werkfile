@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Werkfile Editor</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent body scroll */
+        }
+        .app-container { display: flex; height: 100vh; }
+        /* Sidebar Container */
+        .sidebar {
+            width: 20%; min-width: 220px; max-width: 300px;
+            background-color: #f3f4f6; /* gray-100 */
+            border-right: 1px solid #e5e7eb; /* gray-200 */
+            display: flex;
+            flex-direction: column; /* Key for header/content/footer stacking */
+            height: 100%; /* Takes full viewport height */
+        }
+        /* Sidebar Header - Height controlled by Tailwind */
+        .sidebar-header {
+            border-bottom: 1px solid #e5e7eb; /* gray-200 */
+            flex-shrink: 0; /* Prevents shrinking */
+        }
+        /* Sidebar Content (Blob List Area) */
+        .sidebar-content {
+            padding: 1rem;
+            overflow-y: auto; /* Allows scrolling ONLY for this area */
+            flex-grow: 1; /* Takes up available space */
+            min-height: 0; /* Safeguard for flex overflow calculation */
+        }
+        /* Sidebar Footer (Actions Area) */
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid #e5e7eb; /* gray-200 */
+            flex-shrink: 0; /* Prevents shrinking */
+            background-color: #e5e7eb; /* Slightly different bg to stand out */
+        }
+        /* Main Content Area (Toolbar + Editor/Preview) */
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100%; }
+        /* Toolbar - Height controlled by Tailwind */
+        .toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+        }
+        .editor-preview-area { display: flex; flex-grow: 1; overflow: hidden; background-color: #f9fafb; }
+        .editor-pane { width: 50%; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; height: 100%; }
+        .preview-pane { width: 50%; display: flex; flex-direction: column; height: 100%; }
+        #editor {
+            flex-grow: 1; width: 100%; padding: 1rem; font-family: monospace; font-size: 0.875rem;
+            resize: none; border: none; outline: none; background-color: #ffffff; overflow-y: auto;
+        }
+        #preview-content {
+            flex-grow: 1; padding: 1rem; background-color: #ffffff; overflow-y: auto;
+        }
+        #frontmatter-preview-container {
+            height: auto; min-height: 5rem; max-height: 10rem; padding: 1rem;
+            border-top: 1px solid #e5e7eb; background-color: #f9fafb;
+            font-size: 0.75rem; overflow-y: auto; flex-shrink: 0;
+        }
+        .blob-item {
+            cursor: pointer; padding: 8px 12px; border-radius: 6px; transition: background-color 0.2s ease-in-out;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.875rem; color: #374151;
+        }
+        .blob-item:hover { background-color: #e5e7eb; }
+        .blob-item.active { background-color: #d1d5db; font-weight: 500; }
+        .pane-title {
+            font-size: 0.75rem; font-weight: 500; padding: 0.5rem 1rem; background-color: #f3f4f6;
+            border-bottom: 1px solid #e5e7eb; color: #4b5563; flex-shrink: 0;
+        }
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5);
+            display: flex; justify-content: center; align-items: center; z-index: 50;
+        }
+        .modal-content {
+            background-color: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 90%; width: 500px; position: relative; max-height: 80vh; overflow-y: auto;
+        }
+        .modal-close-button {
+            position: absolute; top: 0.75rem; right: 0.75rem; background: none; border: none;
+            cursor: pointer; color: #6b7280;
+        }
+        .modal-close-button:hover { color: #111827; }
+        /* Sidebar footer button style */
+        .sidebar-action-button {
+            display: block; width: 100%; text-align: left; padding: 0.5rem 0.75rem; margin-bottom: 0.5rem;
+            font-size: 0.875rem; color: #374151; background-color: #fff; border: 1px solid #d1d5db;
+            border-radius: 0.375rem; transition: background-color 0.2s ease-in-out;
+        }
+        .sidebar-action-button:hover { background-color: #f9fafb; }
+
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header h-16 flex items-center px-4">
+                <h1 class="text-2xl font-bold text-gray-800">Werkfile</h1>
+            </div>
+            <div class="sidebar-content">
+                 <h2 class="text-lg font-medium mb-3 text-gray-700">Saved to Local Storage</h2>
+                <ul id="blob-list" class="space-y-1">
+                    <li class="text-gray-500 italic px-3 text-sm">Loading...</li>
+                </ul>
+            </div>
+            <div class="sidebar-footer">
+                 <h3 class="text-sm font-semibold mb-2 text-gray-600">Actions</h3>
+                 <button id="profile-button" class="sidebar-action-button">
+                     <i data-lucide="user" class="inline-block w-4 h-4 mr-1"></i> View Profile
+                 </button>
+                 <button id="download-button" class="sidebar-action-button">
+                     <i data-lucide="download" class="inline-block w-4 h-4 mr-1"></i> Download All
+                 </button>
+                 <button id="generate-resume-button" class="sidebar-action-button">
+                     <i data-lucide="file-text" class="inline-block w-4 h-4 mr-1"></i> Generate Resume
+                 </button>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <div class="toolbar h-16 px-4">
+                <input
+                    type="text"
+                    id="blob-name-input"
+                    placeholder="Werkfile Name"
+                    class="text-lg font-medium text-gray-700 border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-1/2 md:w-1/3"
+                />
+                <div class="flex items-center space-x-2">
+                    <button id="new-button" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-150 ease-in-out text-sm">
+                         <i data-lucide="file-plus-2" class="inline-block w-4 h-4 mr-1 -ml-1"></i> New
+                    </button>
+                    <button id="save-button" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-150 ease-in-out text-sm">
+                         <i data-lucide="save" class="inline-block w-4 h-4 mr-1 -ml-1"></i> Save
+                    </button>
+                    <button id="delete-button" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-150 ease-in-out text-sm">
+                         <i data-lucide="trash-2" class="inline-block w-4 h-4 mr-1 -ml-1"></i> Delete
+                    </button>
+                     <a href="https://werkfile.com/about" target="_blank" rel="noopener noreferrer" title="About Werkfile"
+                        class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition duration-150 ease-in-out ml-2">
+                         <i data-lucide="info" class="w-5 h-5"></i>
+                     </a>
+                </div>
+            </div>
+
+            <div class="editor-preview-area">
+                <div class="editor-pane">
+                    <div class="pane-title">Editor</div>
+                    <textarea
+                        id="editor"
+                        placeholder="---&#10;company: TechCorp Inc.&#10;role: Lead Developer&#10;startDate: 2022-01-15&#10;endDate: 2024-06-30 # Or omit if current&#10;location: San Francisco, CA / Remote&#10;category: Full-time&#10;companyUrl: https://www.techcorp.example.com&#10;summary: Led a team of 5 engineers...&#10;---&#10;&#10;### Accomplishments & Case Studies&#10;&#10;Use Markdown for the main content. Use headings (##, ###) for projects.&#10;&#10;### Project Phoenix: Platform Rewrite&#10;&#10;**Context:** Existing platform suffered...&#10;**Goal:** Rewrite using microservices...&#10;&#10;* **Designed** the microservices architecture... Result: Reduced costs by 20%.&#10;* **Led** the backend team (3 engineers)...&#10;* **Implemented** CI/CD pipeline... Result: Deployment time down to 15 mins.&#10;* **Result:** Launched on schedule, improved API response by 60%.&#10;&#10;### Feature: Real-time Collaboration&#10;&#10;* **Evaluated** WebSocket libraries...&#10;* **Developed** core sync logic...&#10;* **Result:** 15% increase in user engagement."
+                    ></textarea>
+                </div>
+
+                <div class="preview-pane">
+                     <div class="pane-title">Preview</div>
+                    <div id="preview-content" class="prose max-w-none">
+                        <p class="text-gray-400">Preview will appear here.</p>
+                    </div>
+                    <div id="frontmatter-preview-container">
+                        <h3 class="font-semibold mb-1 text-gray-600">Frontmatter (Parsed)</h3>
+                        <pre id="frontmatter-data" class="whitespace-pre-wrap break-words text-gray-700">{}</pre>
+                        <p id="frontmatter-error" class="text-red-500 mt-1 hidden"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close-button" onclick="hideModal('profile-modal')">
+                 <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h2 class="text-xl font-semibold mb-4">Edit Profile</h2>
+            <form id="profile-form">
+                <div class="mb-3">
+                    <label for="profile-name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" id="profile-name" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Your Name">
+                </div>
+                <div class="mb-3">
+                    <label for="profile-contact" class="block text-sm font-medium text-gray-700 mb-1">Contact Info</label>
+                    <textarea id="profile-contact" rows="4" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Email: your@email.com&#10;Phone: 123-456-7890&#10;LinkedIn: linkedin.com/in/yourprofile&#10;Portfolio: yourportfolio.com"></textarea>
+                </div>
+                 <div class="mb-4">
+                    <label for="profile-education" class="block text-sm font-medium text-gray-700 mb-1">Education</label>
+                    <textarea id="profile-education" rows="4" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="University Name - Degree, Major (Year)&#10;Another School - Certificate (Year)"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                     <button type="button" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" onclick="hideModal('profile-modal')">Cancel</button>
+                     <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+     <div id="generate-resume-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+             <button class="modal-close-button" onclick="hideModal('generate-resume-modal')">
+                 <i data-lucide="x" class="w-6 h-6"></i>
+             </button>
+            <h2 class="text-xl font-semibold mb-4">Generate Resume</h2>
+            <p class="text-gray-700 mb-4">
+                This feature is coming soon! We're working hard on integrating powerful resume generation capabilities.
+            </p>
+            <p class="text-gray-700">
+                In the meantime, check out our progress or sign up for beta access at:
+                <a href="https://werkfile.com/beta" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+                    werkfile.com/beta
+                </a>
+            </p>
+             <div class="flex justify-end mt-5">
+                 <button type="button" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" onclick="hideModal('generate-resume-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- DOM Elements ---
+        const editor = document.getElementById('editor');
+        const previewContent = document.getElementById('preview-content');
+        const frontmatterDataDisplay = document.getElementById('frontmatter-data');
+        const frontmatterError = document.getElementById('frontmatter-error');
+        const blobList = document.getElementById('blob-list');
+        const blobNameInput = document.getElementById('blob-name-input');
+        const newButton = document.getElementById('new-button');
+        const saveButton = document.getElementById('save-button');
+        const deleteButton = document.getElementById('delete-button');
+        const profileButton = document.getElementById('profile-button');
+        const downloadButton = document.getElementById('download-button');
+        const generateResumeButton = document.getElementById('generate-resume-button');
+        const profileModal = document.getElementById('profile-modal');
+        const generateResumeModal = document.getElementById('generate-resume-modal');
+        const profileForm = document.getElementById('profile-form');
+        const profileNameInput = document.getElementById('profile-name');
+        const profileContactInput = document.getElementById('profile-contact');
+        const profileEducationInput = document.getElementById('profile-education');
+
+        // --- State ---
+        let currentBlobId = null;
+        let blobs = {};
+        let profileData = {};
+
+        // --- Constants ---
+        const BLOB_STORAGE_KEY = 'werkfile_editor_blobs_v1';
+        const PROFILE_STORAGE_KEY = 'werkfile_profile_data_v1';
+        const FRONTMATTER_SEPARATOR = '---';
+        const DEFAULT_BLOB_NAME = "Untitled Werkfile";
+
+        // --- Functions ---
+
+        // Modal Handling
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+
+        // Load/Save Profile Data
+        function loadProfileData() {
+            const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
+            try {
+                profileData = storedProfile ? JSON.parse(storedProfile) : {};
+                profileData = { name: '', contact: '', education: '', ...profileData }; // Ensure keys exist
+            } catch (e) { console.error("Failed parsing profile data:", e); profileData = { name: '', contact: '', education: '' }; }
+            profileNameInput.value = profileData.name; profileContactInput.value = profileData.contact; profileEducationInput.value = profileData.education;
+        }
+        function saveProfileData() {
+            profileData.name = profileNameInput.value.trim(); profileData.contact = profileContactInput.value.trim(); profileData.education = profileEducationInput.value.trim();
+            try { localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profileData)); console.log("Profile saved."); }
+            catch (e) { console.error("Failed saving profile:", e); alert("Error saving profile."); }
+        }
+        profileForm.addEventListener('submit', (event) => { event.preventDefault(); saveProfileData(); hideModal('profile-modal'); });
+
+        // Load/Save Blobs
+        function loadBlobs() {
+            const storedBlobs = localStorage.getItem(BLOB_STORAGE_KEY);
+            try { blobs = storedBlobs ? JSON.parse(storedBlobs) : {}; if (typeof blobs !== 'object' || blobs === null) blobs = {}; }
+            catch (e) { blobs = {}; }
+            let needsSave = false;
+            Object.keys(blobs).forEach(id => { /* Migration/Correction Logic */
+                let changed = false; if (typeof blobs[id] === 'string') { blobs[id] = { name: `${DEFAULT_BLOB_NAME} ${id}`, content: blobs[id] }; changed = true; } else if (!blobs[id] || typeof blobs[id] !== 'object') { delete blobs[id]; changed = true; } else { if (typeof blobs[id].name !== 'string' || !blobs[id].name.trim()) { blobs[id].name = `${DEFAULT_BLOB_NAME} ${id}`; changed = true; } if (typeof blobs[id].content !== 'string') { blobs[id].content = ''; changed = true; } } if (changed) needsSave = true;
+            });
+            if (needsSave) saveBlobs();
+            renderBlobList();
+            if (Object.keys(blobs).length === 0) { clearEditor(false); blobNameInput.placeholder = 'Create your first Werkfile'; }
+            else if (!currentBlobId) { clearEditor(false); blobNameInput.placeholder = 'Select or create a Werkfile'; }
+        }
+        function saveBlobs() { try { localStorage.setItem(BLOB_STORAGE_KEY, JSON.stringify(blobs)); } catch (e) { console.error("Failed saving blobs:", e); alert("Error saving Werkfiles."); } }
+
+        // Render Blob List
+        function renderBlobList() {
+            blobList.innerHTML = ''; const blobIds = Object.keys(blobs);
+            if (blobIds.length === 0) { blobList.innerHTML = '<li class="text-gray-500 italic px-3 text-sm">No Werkfiles saved yet.</li>'; return; }
+            blobIds.sort((a, b) => (blobs[a]?.name?.toLowerCase() || '').localeCompare(blobs[b]?.name?.toLowerCase() || ''));
+            blobIds.forEach(id => { if (!blobs[id]) return; const li = document.createElement('li'); li.textContent = blobs[id].name; li.title = blobs[id].name; li.dataset.id = id; li.className = 'blob-item'; if (id === currentBlobId) li.classList.add('active'); li.addEventListener('click', () => loadBlob(id)); blobList.appendChild(li); });
+        }
+
+        // Parse Content & Update Preview
+        function parseContent(content) { 
+            const parts = content.split(FRONTMATTER_SEPARATOR); let frontmatter = null, markdown = content, error = null;
+            if (parts.length >= 3 && parts[0].trim() === '') {
+                try { frontmatter = jsyaml.load(parts[1]); markdown = parts.slice(2).join(FRONTMATTER_SEPARATOR).trimStart(); }
+                catch (e) { error = `Invalid YAML: ${e.message}`; markdown = parts.slice(1).join(FRONTMATTER_SEPARATOR).trimStart(); frontmatter = null; }
+            } else { markdown = content; frontmatter = null; }
+            return { frontmatter, markdown, error };
+        }
+        function updatePreview() {
+            const { frontmatter, markdown, error } = parseContent(editor.value);
+            previewContent.innerHTML = markdown ? marked.parse(markdown) : '<p class="text-gray-400">No Markdown content.</p>';
+            if (error) { frontmatterDataDisplay.textContent = '{}'; frontmatterError.textContent = error; frontmatterError.classList.remove('hidden'); }
+            else { frontmatterDataDisplay.textContent = JSON.stringify(frontmatter || {}, null, 2); frontmatterError.classList.add('hidden'); frontmatterError.textContent = ''; }
+        }
+
+        // Load/Clear Editor
+        function loadBlob(id) { if (blobs[id]) { currentBlobId = id; blobNameInput.value = blobs[id].name; editor.value = blobs[id].content; updatePreview(); renderBlobList(); console.log(`Loaded: ${id} - "${blobs[id].name}"`); } else { console.error(`Blob ${id} not found.`); clearEditor(); } }
+        function clearEditor(focusInput = true) { editor.value = ''; blobNameInput.value = ''; blobNameInput.placeholder = DEFAULT_BLOB_NAME; currentBlobId = null; updatePreview(); renderBlobList(); if (focusInput) blobNameInput.focus(); console.log("Editor cleared."); }
+
+        // Save Current Blob
+        function saveCurrentBlob() {
+            const content = editor.value; let name = blobNameInput.value.trim();
+            if (!name) { const { frontmatter } = parseContent(content); if (frontmatter?.title) name = String(frontmatter.title).trim(); blobNameInput.value = name; }
+            if (!name) { alert("Please enter a name."); blobNameInput.focus(); return; }
+            let isNew = false, changed = false;
+            if (!currentBlobId) { isNew = true; currentBlobId = Date.now().toString(); changed = true; }
+            else if (blobs[currentBlobId]) { changed = (blobs[currentBlobId].name !== name || blobs[currentBlobId].content !== content); }
+            else { console.error(`Update failed: ID ${currentBlobId} not found. Saving as new.`); isNew = true; currentBlobId = Date.now().toString(); changed = true; }
+            if (changed) {
+                blobs[currentBlobId] = { name: name, content: content }; saveBlobs(); console.log(`${isNew ? 'Created' : 'Updated'} Werkfile: ${currentBlobId} - "${name}"`);
+                renderBlobList();
+                 const saveButtonOriginalHTML = `<i data-lucide="save" class="inline-block w-4 h-4 mr-1 -ml-1"></i> Save`; // Store original HTML
+                 saveButton.innerHTML = `<i data-lucide="check" class="inline-block w-4 h-4 mr-1 -ml-1"></i> Saved!`; saveButton.classList.replace('bg-green-500', 'bg-teal-500'); saveButton.classList.replace('hover:bg-green-600', 'hover:bg-teal-600'); lucide.createIcons();
+                 setTimeout(() => { saveButton.innerHTML = saveButtonOriginalHTML; saveButton.classList.replace('bg-teal-500', 'bg-green-500'); saveButton.classList.replace('hover:bg-teal-600', 'hover:bg-green-600'); lucide.createIcons(); }, 1500);
+            } else { console.log(`No changes detected for ${currentBlobId}. Save skipped.`); }
+             const listItems = blobList.querySelectorAll('li[data-id]'); listItems.forEach(item => item.classList.toggle('active', item.dataset.id === currentBlobId));
+        }
+
+        // Delete Current Blob
+        function deleteCurrentBlob() { /* ... remains same ... */
+            if (!currentBlobId || !blobs[currentBlobId]) { alert("No Werkfile selected."); return; }
+            const blobName = blobs[currentBlobId].name;
+            if (confirm(`Delete "${blobName}"? This cannot be undone.`)) { const deletedId = currentBlobId; const deletedName = blobName; delete blobs[currentBlobId]; saveBlobs(); clearEditor(false); blobNameInput.placeholder = 'Select or create a Werkfile'; console.log(`Deleted: ${deletedId} ("${deletedName}")`); }
+        }
+
+        // Download All Data
+        function downloadAllData() { /* ... remains same ... */
+            console.log("Initiating download..."); loadProfileData(); let markdownOutput = `# Werkfile\n\n-----## Profile\n\n`;
+            if (profileData.name) markdownOutput += `**Name:** ${profileData.name}\n\n`; if (profileData.contact) markdownOutput += `**Contact Info:**\n${profileData.contact}\n\n`; if (profileData.education) markdownOutput += `**Education:**\n${profileData.education}\n\n`; markdownOutput += `-----\n\n## Werkfiles\n\n`;
+            const blobIds = Object.keys(blobs); if (blobIds.length === 0) { markdownOutput += "No Werkfiles saved.\n"; } else { blobIds.sort((a, b) => (blobs[a]?.name?.toLowerCase() || '').localeCompare(blobs[b]?.name?.toLowerCase() || '')); blobIds.forEach(id => { if (blobs[id]) { markdownOutput += `### ${blobs[id].name}\n\n${blobs[id].content}\n\n-----\n\n`; } }); }
+            const blob = new Blob([markdownOutput], { type: 'text/markdown;charset=utf-8' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.setAttribute('href', url); link.setAttribute('download', 'werkfile_export.md'); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); console.log("Download triggered.");
+        }
+
+        // --- Event Listeners ---
+        editor.addEventListener('input', updatePreview);
+        newButton.addEventListener('click', () => clearEditor(true));
+        saveButton.addEventListener('click', saveCurrentBlob);
+        deleteButton.addEventListener('click', deleteCurrentBlob);
+        profileButton.addEventListener('click', () => { loadProfileData(); showModal('profile-modal'); });
+        downloadButton.addEventListener('click', downloadAllData);
+        generateResumeButton.addEventListener('click', () => showModal('generate-resume-modal'));
+        [profileModal, generateResumeModal].forEach(modal => { if (modal) { modal.addEventListener('click', (event) => { if (event.target === modal) hideModal(modal.id); }); } });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { hideModal('profile-modal'); hideModal('generate-resume-modal'); } });
+
+        // --- Initialization ---
+        lucide.createIcons(); // Initialize Lucide icons
+        loadProfileData();
+        loadBlobs();
+        if (!currentBlobId && Object.keys(blobs).length === 0) { updatePreview(); }
+
+    </script>
+
+</body>
+</html>
