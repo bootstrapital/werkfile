@@ -359,9 +359,9 @@
 
         // Download All Data
         function downloadAllData() { /* ... remains same ... */
-            console.log("Initiating download..."); loadProfileData(); let markdownOutput = `# Werkfile\n\n-----## Profile\n\n`;
-            if (profileData.name) markdownOutput += `**Name:** ${profileData.name}\n\n`; if (profileData.contact) markdownOutput += `**Contact Info:**\n${profileData.contact}\n\n`; if (profileData.education) markdownOutput += `**Education:**\n${profileData.education}\n\n`; markdownOutput += `-----\n\n## Werkfiles\n\n`;
-            const blobIds = Object.keys(blobs); if (blobIds.length === 0) { markdownOutput += "No Werkfiles saved.\n"; } else { blobIds.sort((a, b) => (blobs[a]?.name?.toLowerCase() || '').localeCompare(blobs[b]?.name?.toLowerCase() || '')); blobIds.forEach(id => { if (blobs[id]) { markdownOutput += `### ${blobs[id].name}\n\n${blobs[id].content}\n\n-----\n\n`; } }); }
+            console.log("Initiating download..."); loadProfileData(); let markdownOutput = `# Werkfile\n\n----------\n\n## Profile\n\n`;
+            if (profileData.name) markdownOutput += `**Name:** ${profileData.name}\n\n`; if (profileData.contact) markdownOutput += `**Contact Info:**\n${profileData.contact}\n\n`; if (profileData.education) markdownOutput += `**Education:**\n${profileData.education}\n\n`; markdownOutput += `----------\n\n## Werkfiles\n\n`;
+            const blobIds = Object.keys(blobs); if (blobIds.length === 0) { markdownOutput += "No Werkfiles saved.\n"; } else { blobIds.sort((a, b) => (blobs[a]?.name?.toLowerCase() || '').localeCompare(blobs[b]?.name?.toLowerCase() || '')); blobIds.forEach(id => { if (blobs[id]) { markdownOutput += `### ${blobs[id].name}\n\n${blobs[id].content}\n\n----------\n\n`; } }); }
             const blob = new Blob([markdownOutput], { type: 'text/markdown;charset=utf-8' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.setAttribute('href', url); link.setAttribute('download', 'werkfile_export.md'); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); console.log("Download triggered.");
         }
 
